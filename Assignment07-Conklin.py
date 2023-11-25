@@ -3,7 +3,7 @@
 # Desc: Demonstrates using data classes with structured error handling
 # Change Log: (Who, When, What)
 #   RRoot,1/1/2030,Created Script
-#   Chad Conklin, 11/13/2023,Modified for Assignment07 requirements
+#   Chad Conklin, 11/23/2023, Modified for Assignment07 requirements
 # ------------------------------------------------------------------------------------------ #
 import json
 
@@ -75,25 +75,28 @@ class FileProcessor:
     """ Processes data to and from a file """
     @staticmethod
     def read_data_from_file(file_name: str, student_data: list):
+        """ Reads data from a file and populates the student_data list.
+            If the file does not exist, creates a new empty file. """
         try:
             with open(file_name, "r") as file:
                 student_data.clear()
-                student_data.extend([Student(**item) for item in json.load(file)])
+                data = json.load(file)
+                for item in data:
+                    student_data.append(Student(item["first_name"], item["last_name"], item["course_name"]))
         except FileNotFoundError as e:
-            IO.output_error_messages("File not found, creating a new file.", e)
-            FileProcessor.write_data_to_file(file_name, student_data)
+            IO.output_error_messages("File not found. Creating a new file.", e)
+            FileProcessor.write_data_to_file(file_name, student_data)  # Create an empty file
         except Exception as e:
             IO.output_error_messages("An error occurred while reading the file.", e)
 
     @staticmethod
     def write_data_to_file(file_name: str, student_data: list):
+        """ Writes the student_data list to a file. """
         try:
             with open(file_name, "w") as file:
-                json.dump([student.__dict__ for student in student_data], file)
-                IO.output_student_and_course_names(student_data)
+                json.dump([{"first_name": student.first_name, "last_name": student.last_name, "course_name": student.course_name} for student in student_data], file)
         except Exception as e:
             IO.output_error_messages("An error occurred while writing to the file.", e)
-
 # Presentation Class
 class IO:
     """ Handles input and output operations """
@@ -110,13 +113,7 @@ class IO:
 
     @staticmethod
     def input_menu_choice() -> str:
-        try:
-            choice = input("Enter your menu choice number: ")
-            if choice not in ("1", "2", "3", "4"):
-                raise Exception("Please, choose only 1, 2, 3, or 4")
-        except Exception as e:
-            IO.output_error_messages("Invalid menu choice.", e)
-            return ""
+        choice = input("Enter your menu choice number: ")
         return choice
 
     @staticmethod
@@ -128,17 +125,13 @@ class IO:
 
     @staticmethod
     def input_student_data() -> Student:
-        try:
-            first_name = input("Enter the student's first name: ")
-            last_name = input("Enter the student's last name: ")
-            course_name = input("Enter the course name: ")
-            return Student(first_name, last)
-        except ValueError as e:
-            IO.output_error_messages("Invalid input.", e)
-            return None
+        first_name = input("Enter the student's first name: ")
+        last_name = input("Enter the student's last name: ")
+        course_name = input("Enter the course name: ")
+        return Student(first_name, last_name, course_name)
 
 # Main Body of Script
-students = FileProcessor.read_data_from_file(FILE_NAME, students)
+FileProcessor.read_data_from_file(FILE_NAME, students)
 
 while True:
     IO.output_menu(MENU)
@@ -146,8 +139,7 @@ while True:
 
     if menu_choice == "1":
         student = IO.input_student_data()
-        if student:
-            students.append(student)
+        students.append(student)
 
     elif menu_choice == "2":
         IO.output_student_and_course_names(students)
